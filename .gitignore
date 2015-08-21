@@ -1,0 +1,16 @@
+# OSX generated files
+.DS_Store
+
+# OSX thumbnails
+._*
+
+# Backup files ext
+*.bkp
+
+# VIM files ext
+*.swp
+
+# Composer generated files
+composer.phar
+composer.lock
+vendor/
