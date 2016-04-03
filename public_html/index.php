@@ -8,7 +8,8 @@ use Psr\Http\Message\ResponseInterface as Response;
 $app = new \Slim\App();
 
 /**
- * Formats a string to StudlyCaps using delimiter determine the next word.
+ * Formats string to StudlyCaps using delimiter to determine the next word and
+ * finally removes the delimiter from string.
  *
  * @param string
  * @param string
@@ -43,14 +44,16 @@ $app->add(function (Request $request, Response $response, callable $next) {
 /**
  * Handle request and process response.
  *
+ * Loads controller based endpoint and calls the controller's method based on the
+ * request method.
+ *
  */
-$app->any('/[{controller}[/{id}]]', function (Request $request, Response $response, $args) {
+$app->any('/[{controller}[/{segments:.+}]]', function (Request $request, Response $response, $args) {
 
     if (! count($args)) {
-        $args['controller'] = 'index';
+        $args['controller'] = strtolower(\App\Controller\Controller::DEFAULT_CONTROLLER);
     }
 
-    // load controller.
     $class_name = sprintf(
         'App\\Controller\\%s',
         stringToStudlyCaps($args['controller'])

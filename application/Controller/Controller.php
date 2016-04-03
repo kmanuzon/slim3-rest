@@ -8,11 +8,26 @@ use Slim\Http\Response;
 class Controller
 {
     /**
-     * String to append to method name call.
+     * Class name of the default controller to load.
      *
      * @var string
      */
-    private $methodSuffix = 'Action';
+    const DEFAULT_CONTROLLER = 'Index';
+
+    /**
+     * String to append to controller method name call.
+     *
+     * @var string
+     */
+    const METHOD_SUFFIX = 'Action';
+
+    /**
+     * URL segments relative to the root of the application. This includes the
+     * controller.
+     *
+     * @var array
+     */
+    private $urlSegments = array();
 
     /**
      *
@@ -35,6 +50,7 @@ class Controller
     {
         $this->setRequest($request);
         $this->setResponse($response);
+        $this->setUrlSegments($request);
     }
 
     /**
@@ -88,6 +104,56 @@ class Controller
     }
 
     /**
+     * Collects the URL segments from route and builds a numeric array with the
+     * controller in index 0.
+     *
+     * @param \Slim\Http\Request
+     */
+    protected function setUrlSegments(Request $request)
+    {
+        $route = $request->getAttribute('route');
+
+        $arguments = $route->getArguments();
+
+        $segments[] = isset($arguments['controller']) ?
+            $arguments['controller'] :
+            strtolower(self::DEFAULT_CONTROLLER);
+
+        if (isset($arguments['segments'])) {
+            $segments = array_merge($segments, explode(
+                '/',
+                $arguments['segments']
+            ));
+        }
+
+        $this->urlSegments = $segments;
+    }
+
+    /**
+     *
+     * @return array
+     */
+    protected function getUrlSegments()
+    {
+        return $this->urlSegments;
+    }
+
+    /**
+     *
+     * @param bool
+     * @return mixed
+     */
+    protected function getUrlSegment($index)
+    {
+        if (isset($this->urlSegments[$index])) {
+
+            return $this->urlSegments[$index];
+        }
+
+        return null;
+    }
+
+    /**
      * Process the request and return data by calling the requested controller and
      * its method passing the query parameters and the segments in the URL.
      *
@@ -97,10 +163,8 @@ class Controller
     {
         $request = $this->getRequest();
 
-        $route = $request->getAttribute('route');
+        $action = strtolower($request->getMethod()) . self::METHOD_SUFFIX;
 
-        $action = strtolower($request->getMethod()) . $this->methodSuffix;
-
-        return $this->$action($request->getQueryParams(), $route->getArguments());
+        return $this->$action($request->getQueryParams(), $this->getUrlSegments());
     }
 }

@@ -17,9 +17,12 @@ Each controller class in the application/Controller corresponds to an endpoint
 and its methods are the request methods suffixed with "Action" e.g. getAction,
 postAction etc.
 
-The controller methods are provided with the URL query parameters and URL
-segments as the first argument and second argument respectively, both being an
-associative array.
+The controller methods are provided with the URL query parameters (associative)
+and URL segments (numeric, zero based indices including the controller) as the
+first argument and second argument respectively.
 
-NOTE: StudlyCaps class names can be accessed by hyphenating the class name:
+NOTE: StudlyCaps class names can be accessed by hyphenating the class name e.g.
 ```GET /studly-caps```.
+
+NOTE: The routing map looks like this: ```/controller[/segments...]``` and is
+set in ```public/index.php```.
