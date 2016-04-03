@@ -1,28 +1,66 @@
 <?php
+
 require '../vendor/autoload.php';
 
-$app = new Slim\App();
+use Psr\Http\Message\RequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
-$verbs = array('GET', 'POST', 'PUT', 'DELETE');
-$app->map($verbs, '/[{controller}[/{id}]]', function ($request, $response, $args) {
+$app = new \Slim\App();
 
-    if (!count($args)) {
-        // load index controller.
-        $controller = new App\Controller\Index();
-        $action = strtolower($request->getMethod()) . 'Action';
-        $response->write($controller->$action());
+/**
+ * Formats a string to StudlyCaps using delimiter determine the next word.
+ *
+ * @param string
+ * @param string
+ * @return string
+ */
+function stringToStudlyCaps($str, $delimiter = '-') {
+    $str = ucwords($str, $delimiter);
+    $str = str_replace($delimiter, '', $str);
+
+    return $str;
+}
+
+/**
+ * Permanently redirect paths with a trailing slash to their non-trailing
+ * counterpart.
+ *
+ * @see http://www.slimframework.com/docs/cookbook/route-patterns.html
+ */
+$app->add(function (Request $request, Response $response, callable $next) {
+    $uri = $request->getUri();
+    $path = $uri->getPath();
+
+    if ($path != '/' && substr($path, -1) == '/') {
+        $uri = $uri->withPath(substr($path, 0, -1));
+
+        return $response->withRedirect((string)$uri, 301);
+    }
+
+    return $next($request, $response);
+});
+
+/**
+ * Handle request and process response.
+ *
+ */
+$app->any('/[{controller}[/{id}]]', function (Request $request, Response $response, $args) {
+
+    if (! count($args)) {
+        $args['controller'] = 'index';
+    }
+
+    // load controller.
+    $class_name = sprintf(
+        'App\\Controller\\%s',
+        stringToStudlyCaps($args['controller'])
+    );
+
+    if (class_exists($class_name)) {
+        $controller = new $class_name($request, $response);
+        $response = $controller->getRequestResponse();
     } else {
-        // load dynamic controller.
-        $class_name = sprintf(
-            'App\\Controller\\%s',
-            ucwords(strtolower($args['controller']))
-        );
-        if (class_exists($class_name)) {
-            $controller = new $class_name();
-            $response->write($controller->getAction($args));
-        } else {
-            $response->withStatus(400)->write('Bad Request');
-        }
+        $response = $response->withStatus(400)->write('Bad Request');
     }
 
     return $response;
