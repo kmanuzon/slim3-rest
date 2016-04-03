@@ -88,6 +88,8 @@ abstract class Controller
 
             return $response->withJson($requestResponse);
         }
+
+        return $response->withStatus(500)->write('Unexpected Response');
     }
 
     /**
