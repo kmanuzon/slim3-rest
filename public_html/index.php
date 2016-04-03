@@ -63,7 +63,7 @@ $app->any('/[{controller}[/{segments:.+}]]', function (Request $request, Respons
         $controller = new $class_name($request, $response);
         $response = $controller->getRequestResponse();
     } else {
-        $response = $response->withStatus(400)->write('Bad Request');
+        $response = $response->withStatus(404)->write('Not Found');
     }
 
     return $response;

@@ -5,7 +5,7 @@ namespace App\Controller;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
-class Controller
+abstract class Controller
 {
     /**
      * Class name of the default controller to load.
@@ -30,18 +30,21 @@ class Controller
     private $urlSegments = array();
 
     /**
+     * The request object.
      *
      * @var \Slim\Http\Request
      */
     private $request;
 
     /**
+     * The response object.
      *
      * @var \Slim\Http\Response
      */
     private $response;
 
     /**
+     * Constructor.
      *
      * @param \Slim\Http\Request
      * @param \Slim\Http\Response
@@ -65,30 +68,30 @@ class Controller
     public function getRequestResponse()
     {
         $request = $this->getRequest();
-
-        $action = strtolower($request->getMethod()) . self::METHOD_SUFFIX;
-
-        $data = $this->$action($this->getRequest(), $this->getResponse());
-
-        if ($data instanceof Response) {
-
-            return $data;
-        }
-
         $response = $this->getResponse();
 
-        if (gettype($data) === 'string') {
+        $method = $this->getMethod($request);
 
-            return $response->write($data);
+        $requestResponse = $this->callAction($method, array($request, $response));
+
+        if ($requestResponse instanceof Response) {
+
+            return $requestResponse;
         }
 
-        if (gettype($data) === 'array') {
+        if (gettype($requestResponse) === 'string') {
 
-            return $response->withJson($data);
+            return $response->write($requestResponse);
+        }
+
+        if (gettype($requestResponse) === 'array') {
+
+            return $response->withJson($requestResponse);
         }
     }
 
     /**
+     * Set the request object.
      *
      * @param \Slim\Http\Request
      */
@@ -98,6 +101,7 @@ class Controller
     }
 
     /**
+     * Get the request object.
      *
      * @return \Slim\Http\Request
      */
@@ -107,6 +111,7 @@ class Controller
     }
 
     /**
+     * Set the response object.
      *
      * @param \Slim\Http\Response
      */
@@ -116,6 +121,7 @@ class Controller
     }
 
     /**
+     * Get the response object.
      *
      * @return \Slim\Http\Response
      */
@@ -151,6 +157,7 @@ class Controller
     }
 
     /**
+     * Get all URL segments.
      *
      * @return array
      */
@@ -160,6 +167,7 @@ class Controller
     }
 
     /**
+     * Get the URL segment specified by index.
      *
      * @param bool
      * @return mixed
@@ -172,5 +180,42 @@ class Controller
         }
 
         return null;
+    }
+
+    /**
+     * Get the controller method based on request method.
+     *
+     * @param \Slim\Http\Request
+     * @return string
+     */
+    protected function getMethod(Request $request)
+    {
+        return strtolower($request->getMethod()) . self::METHOD_SUFFIX;
+    }
+
+    /**
+     * Execute the requested method on the controller.
+     *
+     * @param string
+     * @param array
+     * @return mixed
+     */
+    protected function callAction($method, $arguments)
+    {
+        return call_user_func_array(array($this, $method), $arguments);
+    }
+
+    /**
+     * Handle calls to undefined methods on the controller.
+     *
+     * @param string
+     * @param array
+     * @return \Slim\Http\Response
+     */
+    public function __call($name, $arguments)
+    {
+        $response = $this->getResponse();
+
+        return $response->withStatus(405)->write('Method Not Allowed');
     }
 }
