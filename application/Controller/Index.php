@@ -12,10 +12,18 @@ class Index extends Controller
      */
     protected function getAction($request, $response)
     {
-        $content = '<h1>GET a resource</h1>'
-            . '<h3>You have requested a GET on /index endpoint and this is the response!</h3>';
+        $content = array();
+        $content[] = '<h1>Available Resource</h1>';
+        $content[] = '<dl>';
+        $content[] = '<dt>GET /index</dt>';
+        $content[] = '<dd>Returns all available endpoints (HTML).</dd>';
+        $content[] = '<dt>GET /books</dt>';
+        $content[] = '<dd>Returns all available books (JSON).</dd>';
+        $content[] = '<dt>GET /book/1</dt>';
+        $content[] = '<dd>Returns information about the book specified by book id (JSON).</dd>';
+        $content[] = '</dl>';
 
-        return $content;
+        return implode("\n", $content);
     }
 
     /**

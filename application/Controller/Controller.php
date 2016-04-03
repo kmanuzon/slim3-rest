@@ -84,12 +84,17 @@ abstract class Controller
             return $response->write($requestResponse);
         }
 
-        if (gettype($requestResponse) === 'array') {
+        try {
 
             return $response->withJson($requestResponse);
-        }
+        } catch (\RuntimeException $e) {
 
-        return $response->withStatus(500)->write('Unexpected Response');
+            return $response->withStatus(500)->write(sprintf(
+                '%s: %s',
+                $e->getCode(),
+                $e->getMessage()
+            ));
+        }
     }
 
     /**
