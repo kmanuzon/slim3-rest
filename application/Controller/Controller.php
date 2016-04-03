@@ -37,14 +37,14 @@ class Controller
 
     /**
      *
-     * @var Slim\Http\Response
+     * @var \Slim\Http\Response
      */
     private $response;
 
     /**
      *
      * @param \Slim\Http\Request
-     * @param Slim\Http\Response
+     * @param \Slim\Http\Response
      */
     public function __construct(Request $request, Response $response)
     {
@@ -54,10 +54,45 @@ class Controller
     }
 
     /**
+     * Call the requested controller method to process the response and return the
+     * response.
+     *
+     * NOTE: The response object is automatically set to JSON if the returned data
+     * type of the request method is an array.
+     *
+     * @return \Slim\Http\Response
+     */
+    public function getRequestResponse()
+    {
+        $request = $this->getRequest();
+
+        $action = strtolower($request->getMethod()) . self::METHOD_SUFFIX;
+
+        $data = $this->$action($this->getRequest(), $this->getResponse());
+
+        if ($data instanceof Response) {
+
+            return $data;
+        }
+
+        $response = $this->getResponse();
+
+        if (gettype($data) === 'string') {
+
+            return $response->write($data);
+        }
+
+        if (gettype($data) === 'array') {
+
+            return $response->withJson($data);
+        }
+    }
+
+    /**
      *
      * @param \Slim\Http\Request
      */
-    public function setRequest(Request $request)
+    protected function setRequest(Request $request)
     {
         $this->request = $request;
     }
@@ -66,41 +101,27 @@ class Controller
      *
      * @return \Slim\Http\Request
      */
-    public function getRequest()
+    protected function getRequest()
     {
         return $this->request;
     }
 
     /**
      *
-     * @param Slim\Http\Response
+     * @param \Slim\Http\Response
      */
-    public function setResponse(Response $response)
+    protected function setResponse(Response $response)
     {
         $this->response = $response;
     }
 
     /**
      *
-     * @return Slim\Http\Response
+     * @return \Slim\Http\Response
      */
-    public function getResponse()
+    protected function getResponse()
     {
         return $this->response;
-    }
-
-    /**
-     * Run the requested controller and return appropriate response.
-     *
-     * @return Slim\Http\Response
-     */
-    public function getRequestResponse()
-    {
-        $data = $this->callAction();
-
-        $response = $this->getResponse();
-
-        return $response->write($data);
     }
 
     /**
@@ -151,20 +172,5 @@ class Controller
         }
 
         return null;
-    }
-
-    /**
-     * Process the request and return data by calling the requested controller and
-     * its method passing the query parameters and the segments in the URL.
-     *
-     * @return mixed
-     */
-    private function callAction()
-    {
-        $request = $this->getRequest();
-
-        $action = strtolower($request->getMethod()) . self::METHOD_SUFFIX;
-
-        return $this->$action($request->getQueryParams(), $this->getUrlSegments());
     }
 }
